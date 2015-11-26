@@ -1,0 +1,14 @@
+# Add -link $USER_mysql_1:mysql if you're using that container
+
+# Note the funky way that containers are named when started from docker-compose.
+
+docker run \
+  -ti \
+  -p 8080:8080 \
+  --rm -e DISPLAY=$DISPLAY \
+  --link $USER_artifactory_1:artifactory \
+  -v "/data/m2":/home/developer/.m2 \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v $HOME/.netbeans-docker:/home/developer/.netbeans \
+  -v /data/projects:/home/developer/NetBeansProjects \
+  fgrehm/netbeans:v8.0.1
