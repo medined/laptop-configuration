@@ -45,11 +45,13 @@ artifactory() {
 
         docker run \
                 -d \
-                --net=host \
+                -p 8081:8081 \
                 --name artifactory \
                 -v "/data/artifactory/data:/opt/artifactory/data" \
                 -v "/data/logs/artifactory:/opt/artifactory/logs" \
                 codingtony/artifactory
+
+        sudo hostess add artifactory $(docker inspect --format "{{.NetworkSettings.Networks.bridge.IPAddress}}" artifactory)
 }
 
 aws(){
@@ -180,7 +182,7 @@ netbeans() {
                 -p 8080:8080 \
                 --rm \
                 -e DISPLAY=$DISPLAY \
-                --link ${USER}_artifactory_1:artifactory \
+                --link artifactory:artifactory \
                 -v "/data/m2":/home/developer/.m2 \
                 -v /tmp/.X11-unix:/tmp/.X11-unix \
                 -v $HOME/.netbeans-docker:/home/developer/.netbeans \
