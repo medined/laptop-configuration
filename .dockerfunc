@@ -147,7 +147,7 @@ kitematic() {
                 jonadev95/kitematic-docker
 }
 
-lpass(){
+lpass(){        
         docker run --rm -it \
                 -v $HOME/.lpass:/root/.lpass \
                 --name lpass \
@@ -175,14 +175,12 @@ mosquitto() {
 
 netbeans() {
         del_stopped netbeans
-        relies_on "${USER}_artifactory_1"
+        relies_on "artifactory"
 
         docker run \
                 -it \
-                -p 8080:8080 \
-                --rm \
+                --net=host \
                 -e DISPLAY=$DISPLAY \
-                --link artifactory:artifactory \
                 -v "/data/m2":/home/developer/.m2 \
                 -v /tmp/.X11-unix:/tmp/.X11-unix \
                 -v $HOME/.netbeans-docker:/home/developer/.netbeans \
