@@ -1,0 +1,213 @@
+# This file is based on the work by Jessie Frazelle.
+
+# TODO: Add check that hostess is installed. Try installing it like the nsenter script.
+
+dcleanup() {
+        docker rm -v $(docker ps --filter status=exited -q 2>/dev/null) 2>/dev/null
+        docker rmi $(docker images --filter dangling=true -q 2>/dev/null) 2>/dev/null
+}
+
+del_stopped() {
+        local name=$1 
+        local state=$(docker inspect --format "{{.State.Running}}" $name 2>/dev/null)
+
+        if [[ "$state" == "false" ]]; then
+                docker rm $name
+        fi
+}
+
+relies_on(){
+        local containers=$@
+
+        for container in $containers; do
+                local state=$(docker inspect --format "{{.State.Running}}" $container 2>/dev/null)
+
+                if [[ "$state" == "false" ]] || [[ "$state" == "" ]]; then
+                        echo "$container is not running, starting it for you."
+                        $container
+                fi
+        done
+}
+
+#
+# Container Aliases
+#
+apt_file(){
+        docker run --rm -it \
+                --name apt-file \
+                jess/apt-file
+}
+alias apt-file="apt_file"
+aws(){
+        docker run -it --rm \
+                -v $HOME/.aws:/root/.aws \
+                --log-driver none \
+                --name aws \
+                jess/awscli "$@"
+}
+
+cadvisor(){
+        docker run -d \
+                --restart always \
+                -v /:/rootfs:ro \
+                -v /var/run:/var/run:rw \
+                -v /sys:/sys:ro  \
+                -v /var/lib/docker/:/var/lib/docker:ro \
+                -p 1234:8080 \
+                --name cadvisor \
+                google/cadvisor
+
+        sudo hostess add cadvisor $(docker inspect --format "{{.NetworkSettings.Networks.bridge.IPAddress}}" cadvisor)
+        browser-exec "http://cadvisor:8080"
+}
+
+consul(){
+        del_stopped consul
+
+        # check if we passed args and if consul is running
+        local args=$@
+        local state=$(docker inspect --format "{{.State.Running}}" consul 2>/dev/null)
+        if [[ "$state" == "true" ]] && [[ ! -z "$args" ]]; then
+                docker exec -it consul consul "$@"
+                return 0
+        fi
+
+        docker run -d \
+                --restart always \
+                -v $HOME/.consul:/etc/consul.d \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                --net host \
+                -e GOMAXPROCS=2 \
+                --name consul \
+                jess/consul agent \
+                -bootstrap-expect 1 \
+                -config-dir /etc/consul.d \
+                -data-dir /data \
+                -encrypt $(docker run --rm jess/consul keygen) \
+                -ui-dir /usr/src/consul \
+                -server \
+                -dc neverland \
+                -bind 0.0.0.0
+
+        sudo hostess add consul $(docker inspect --format "{{.NetworkSettings.Networks.bridge.IPAddress}}" consul)
+        browser-exec "http://consul:8500"
+}
+
+gcalcli(){
+        docker run --rm -it \
+                -v /etc/localtime:/etc/localtime:ro \
+                -v $HOME/.gcalcli/home:/home/gcalcli/home \
+                -v $HOME/.gcalcli/work/oauth:/home/gcalcli/.gcalcli_oauth \
+                -v $HOME/.gcalcli/work/gcalclirc:/home/gcalcli/.gcalclirc \
+                --name gcalcli \
+                jess/gcalcli "$@"
+}
+
+htop(){
+        docker run --rm -it \
+                --pid host \
+                --name htop \
+                jess/htop
+}
+
+http(){
+        docker run -t --rm \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                --net host \
+                --log-driver none \
+                jess/httpie "$@"
+}
+
+lpass(){
+        docker run --rm -it \
+                -v $HOME/.lpass:/root/.lpass \
+                --name lpass \
+                jess/lpass "$@"
+}
+
+lynx(){
+        docker run --rm -it \
+                --name lynx \
+                jess/lynx "$@"
+}
+
+pandoc(){
+        local file=${@: -1}
+        local lfile=$(readlink -m "$(pwd)/${file}")
+        local rfile=$(readlink -m "/$(basename $file)")
+        local args=${@:1:${#@}-1}
+
+        docker run --rm \
+                -v ${lfile}:${rfile} \
+                -v /tmp:/tmp \
+                --name pandoc \
+                jess/pandoc ${args} ${rfile}
+}
+
+rstudio(){
+        del_stopped rstudio
+
+        docker run -d \
+                -v /etc/localtime:/etc/localtime:ro \
+                -v /tmp/.X11-unix:/tmp/.X11-unix \
+                -v $HOME/fastly-logs:/root/fastly-logs \
+                -v /dev/shm:/dev/shm \
+                -e DISPLAY=unix$DISPLAY \
+                -e QT_DEVICE_PIXEL_RATIO \
+                --device /dev/dri \
+                --name rstudio \
+                jess/rstudio
+}
+
+s3cmdocker(){
+        del_stopped s3cmd
+
+        docker run --rm -it \
+                -e AWS_ACCESS_KEY="${DOCKER_AWS_ACCESS_KEY}" \
+                -e AWS_SECRET_KEY="${DOCKER_AWS_ACCESS_SECRET}" \
+                -v $(pwd):/root/s3cmd-workspace \
+                --name s3cmd \
+                jess/s3cmd "$@"
+}
+
+slack(){
+        del_stopped slack
+
+        docker run -d \
+                -v /etc/localtime:/etc/localtime:ro \
+                -v /tmp/.X11-unix:/tmp/.X11-unix \
+                -e DISPLAY=unix$DISPLAY \
+                --device /dev/snd \
+                --device /dev/dri \
+                --group-add audio \
+                -v /home/jessie/.slack:/root/.config/Slack \
+                --name slack \
+                jess/slack
+
+        exit
+}
+
+telnet(){
+        docker run -it --rm \
+                --log-driver none \
+                jess/telnet "$@"
+}
+
+traceroute(){
+        docker run --rm -it \
+                --net host \
+                jess/traceroute "$@"
+}
+
+wireshark(){
+        del_stopped wireshark
+
+        docker run -d \
+                -v /etc/localtime:/etc/localtime:ro \
+                -v /tmp/.X11-unix:/tmp/.X11-unix \
+                -e DISPLAY=unix$DISPLAY \
+                --net host \
+                --name wireshark \
+                jess/wireshark
+}
+
