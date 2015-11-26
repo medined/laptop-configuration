@@ -38,6 +38,7 @@ apt_file(){
                 jess/apt-file
 }
 alias apt-file="apt_file"
+
 aws(){
         docker run -it --rm \
                 -v $HOME/.aws:/root/.aws \
@@ -130,6 +131,25 @@ lynx(){
                 --name lynx \
                 jess/lynx "$@"
 }
+
+netbeans() {
+        del_stopped netbeans
+        relies_on "${USER}_artifactory_1"
+
+        docker run \
+                -it \
+                --net=host \
+                --rm \
+                -e DISPLAY=$DISPLAY \
+                --link ${USER}_artifactory_1:artifactory \
+                -v "/data/m2":/home/developer/.m2 \
+                -v /tmp/.X11-unix:/tmp/.X11-unix \
+                -v $HOME/.netbeans-docker:/home/developer/.netbeans \
+                -v /data/projects:/home/developer/NetBeansProjects \
+                --name netbeans \
+                fgrehm/netbeans:v8.0.1
+}
+
 
 pandoc(){
         local file=${@: -1}
