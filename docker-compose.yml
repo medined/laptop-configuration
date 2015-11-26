@@ -1,0 +1,8 @@
+artifactory:
+  image: codingtony/artifactory
+  volumes:
+    - "/data/artifactory/data:/opt/artifactory/data"
+    - "/data/logs/artifactory:/opt/artifactory/logs"
+  ports:
+    - "8081:8081"
+  hostname: artifactory
