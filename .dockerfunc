@@ -138,7 +138,7 @@ netbeans() {
 
         docker run \
                 -it \
-                --net=host \
+                -p 8080:8080 \
                 --rm \
                 -e DISPLAY=$DISPLAY \
                 --link ${USER}_artifactory_1:artifactory \
