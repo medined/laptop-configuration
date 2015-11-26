@@ -158,6 +158,19 @@ lynx(){
                 jess/lynx "$@"
 }
 
+mosquitto() {
+        del_stopped mosquitto
+
+        docker run \
+                -d \
+                --name mosquitto \
+                -p 1883:1883 \
+                -p 9001:9001 \
+                toke/mosquitto
+
+        sudo hostess add mosquitto $(docker inspect --format "{{.NetworkSettings.Networks.bridge.IPAddress}}" mosquitto)
+}
+
 netbeans() {
         del_stopped netbeans
         relies_on "${USER}_artifactory_1"
