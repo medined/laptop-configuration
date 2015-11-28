@@ -163,9 +163,15 @@ lynx(){
 mosquitto() {
         del_stopped mosquitto
 
+       mkdir -p /data/mqtt/config /data/mqtt/log /data/mqtt/data
+        chmod -R 777 /data/mqtt
+
         docker run \
                 -d \
                 --name mosquitto \
+                -v /data/mqtt/config:/mqtt/config \
+                -v /data/mqtt/log:/mqtt/log \
+                -v /data/mqtt/data/:/mqtt/data/ \
                 -p 1883:1883 \
                 -p 9001:9001 \
                 toke/mosquitto
