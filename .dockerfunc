@@ -43,15 +43,24 @@ artifactory() {
 
         del_stopped artifactory
 
-        docker run \
-                -d \
-                -p 8081:8081 \
-                --name artifactory \
-                -v "/data/artifactory/data:/opt/artifactory/data" \
-                -v "/data/logs/artifactory:/opt/artifactory/logs" \
-                codingtony/artifactory
+	n=$(docker ps --filter="name=artifactory" | grep -v IMAGE | wc -l)
 
-        sudo hostess add artifactory $(docker inspect --format "{{.NetworkSettings.Networks.bridge.IPAddress}}" artifactory)
+	if [[ "$n" == "1" ]]; then
+		echo "Artifactory already running."
+	fi
+
+	if [[ "$n" == "0" ]]; then
+		docker run \
+			-d \
+			-p 8081:8081 \
+			--name artifactory \
+			-v "/data/artifactory/data:/opt/artifactory/data" \
+			-v "/data/logs/artifactory:/opt/artifactory/logs" \
+			codingtony/artifactory
+
+		sudo hostess add artifactory $(docker inspect --format "{{.NetworkSettings.Networks.bridge.IPAddress}}" artifactory)
+	fi
+
 }
 
 aws(){
