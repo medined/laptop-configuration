@@ -5,6 +5,11 @@ sudo apt-get install -y git terminator
 git config --global user.email "david.medinets@gmail.com"
 git config --global user.name "David Medinets"
 
+mkdir /home/$USER/.ssh
+chmod 755 /home/$USER/.ssh
+ln -s /data/basho-ssh/id_rsa /home/$USER/.ssh/id_rsa
+ln -s /data/basho-ssh/id_rsa.pub /home/$USER/.ssh/id_rsa.pub
+cat /home/$USER/.ssh/id_rsa.pub > /home/$USER/.ssh/authorized_keys
 
 # Mount the 960GB drive
 sudo cp /etc/fstab /etc/fstab.original
@@ -31,4 +36,6 @@ cp $PDIR/.vimrc      .vimrc
 
 popd > /dev/null
 
-
+echo "Stuff to do:"
+echo " * install lastpass, omnibar in firefox"
+echo " * install chrome. "
