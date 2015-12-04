@@ -95,3 +95,4 @@ alias bi="./build-image.sh"
 alias ri="./run-image.sh"
 
 source .dockerfunc
+source /data/d13/docker-files/dockerfunc
